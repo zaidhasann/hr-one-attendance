@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 import pytest
 
 from app.main import (
+    build_department_summary_pipeline,
+    build_employee_monthly_pipeline,
+    build_late_leaderboard_pipeline,
     build_department_trend_pipeline,
     get_attendance_date_for_punch,
     parse_iso_date,
@@ -53,3 +56,29 @@ def test_department_trend_pipeline_pushes_date_filter_into_lookup_and_computes_w
     assert any("$gte" in str(stage) and "2026-10-01" in str(stage) for stage in lookup["pipeline"])
     assert any("$lte" in str(stage) and "2026-10-07" in str(stage) for stage in lookup["pipeline"])
     assert any("$setWindowFields" in stage for stage in pipeline)
+
+
+
+def test_monthly_pipeline_contains_all_production_metrics():
+    pipeline = build_employee_monthly_pipeline(
+        "EMP001",
+        parse_iso_date("2026-10-01"),
+        parse_iso_date("2026-10-31"),
+    )
+    group = next(stage["$group"] for stage in pipeline if "$group" in stage)
+    assert {"present_days", "leave_days", "late_count", "total_late_minutes", "total_overtime_minutes"} <= set(group)
+
+
+def test_department_summary_pipeline_keeps_zero_log_employees_and_computes_average():
+    pipeline = build_department_summary_pipeline("2026-10-01", "2026-10-31", "Engineering")
+    assert any("$lookup" in stage for stage in pipeline)
+    assert any("$unwind" in stage and stage["$unwind"].get("preserveNullAndEmptyArrays") for stage in pipeline)
+    project = next(stage["$project"] for stage in pipeline if "$project" in stage)
+    assert "avg_work_hours" in project
+
+
+def test_late_leaderboard_pipeline_includes_tie_ranking_and_department_filter():
+    pipeline = build_late_leaderboard_pipeline("2026-10-01", "2026-10-31", 10, "Engineering")
+    assert any("$setWindowFields" in stage for stage in pipeline)
+    assert any("$rank" in str(stage) for stage in pipeline)
+    assert any(stage.get("$match", {}).get("emp.department") == "Engineering" for stage in pipeline)
