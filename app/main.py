@@ -883,7 +883,6 @@ def count_weekdays_in_range(start_d: date, end_d: date) -> int:
         cur += timedelta(days=1)
     return count
 
-@app.get("/analytics/employees/{emp_code}/monthly")
 def build_employee_monthly_pipeline(emp_code: str, first_day: date, last_day: date) -> list[dict]:
     return [
         {
@@ -931,6 +930,7 @@ def build_employee_monthly_pipeline(emp_code: str, first_day: date, last_day: da
     ]
 
 
+@app.get("/analytics/employees/{emp_code}/monthly")
 def employee_monthly_analytics(
     emp_code: str = Path(..., pattern=EMP_CODE_REGEX),
     month: str = Query(...)
@@ -987,7 +987,6 @@ def employee_monthly_analytics(
     }
 
 # --- Endpoint H: GET /analytics/departments/summary ---
-@app.get("/analytics/departments/summary")
 def build_department_summary_pipeline(first_day_str: str, last_day_str: str, department: Optional[str] = None) -> list[dict]:
     match_stage = {"joined_on": {"$lte": last_day_str}}
     if department is not None:
@@ -1129,6 +1128,7 @@ def build_department_summary_pipeline(first_day_str: str, last_day_str: str, dep
 
     return pipeline
 
+@app.get("/analytics/departments/summary")
 def department_summary_analytics(
     month: str = Query(...),
     department: Optional[str] = Query(None)
@@ -1161,7 +1161,6 @@ def department_summary_analytics(
     }
 
 # --- Endpoint I: GET /analytics/leaderboard/late ---
-@app.get("/analytics/leaderboard/late")
 def build_late_leaderboard_pipeline(first_day_str: str, last_day_str: str, limit: int, department: Optional[str] = None) -> list[dict]:
     match_att = {
         "date": {"$gte": first_day_str, "$lte": last_day_str},
@@ -1217,6 +1216,7 @@ def build_late_leaderboard_pipeline(first_day_str: str, last_day_str: str, limit
     ])
     return pipeline
 
+@app.get("/analytics/leaderboard/late")
 def late_leaderboard(
     month: str = Query(...),
     limit: int = Query(10, ge=1, le=50),
