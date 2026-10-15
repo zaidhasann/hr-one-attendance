@@ -66,7 +66,7 @@ Returns `{"status": "ok"}` with HTTP 200 only after MongoDB connectivity and req
    - `GET /analytics/leaderboard/late` — Standard competition ranking (`$rank`) of employees by late minutes with tie handling.
    - `GET /analytics/departments/{department}/trend` — Daily department trend over calendar windows with 7-day moving averages.
 5. **Administration & Diagnostics**:
-   - `GET /admin/explain/{endpoint}` — Real MongoDB query execution statistics (`executionStats`) validating index scan (`IXSCAN`) coverage.
+   - `GET /admin/explain/{endpoint}` — Real MongoDB query execution statistics (`executionStats`) using the same analytics pipelines as production, so index use and execution work can be inspected.
 
 ## Running Tests
 
