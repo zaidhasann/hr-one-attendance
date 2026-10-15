@@ -46,7 +46,7 @@ To verify database readiness and application health:
 curl http://localhost:8000/health
 ```
 
-Returns `{"status": "ok"}` with HTTP 200 when MongoDB is connected, or HTTP 503 if unavailable.
+Returns `{"status": "ok"}` with HTTP 200 only after MongoDB connectivity and required indexes are ready. Startup fails if required index creation fails; the endpoint returns HTTP 503 when the database is unavailable or initialization is incomplete.
 
 ## Implemented API Endpoints
 
@@ -66,11 +66,11 @@ Returns `{"status": "ok"}` with HTTP 200 when MongoDB is connected, or HTTP 503 
    - `GET /analytics/leaderboard/late` — Standard competition ranking (`$rank`) of employees by late minutes with tie handling.
    - `GET /analytics/departments/{department}/trend` — Daily department trend over calendar windows with 7-day moving averages.
 5. **Administration & Diagnostics**:
-   - `GET /admin/explain/{endpoint}` — Real MongoDB query execution statistics (`executionStats`) validating index scan (`IXSCAN`) coverage.
+   - `GET /admin/explain/{endpoint}` — Real MongoDB query execution statistics (`executionStats`) using the same analytics pipelines as production, so index use and execution work can be inspected.
 
 ## Running Tests
 
-Local unit and integration tests can be executed using `pytest`:
+Unit tests can be executed locally using `pytest` (they do not require a running MongoDB instance):
 
 ```bash
 python -m pytest

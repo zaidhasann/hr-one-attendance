@@ -14,3 +14,8 @@ The department summary originates from the `employees` collection filtered by `j
 
 ### 5. 100x scale
 At 100x scale, time-based sharding on `attendance_logs` using hashed `(emp_code, date)` or pre-aggregating daily summary rollups would eliminate full-month join latency and distribute high-volume biometric punch writes evenly across shards.
+
+
+### 6. Startup readiness and date validation
+
+Required indexes are part of the API's correctness contract. Startup fails if index creation fails, rather than silently serving requests without uniqueness guarantees. `/health` is ready only after index initialization and a successful database ping. Date-only API values are accepted only in canonical `YYYY-MM-DD` form.
