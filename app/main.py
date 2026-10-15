@@ -884,28 +884,8 @@ def count_weekdays_in_range(start_d: date, end_d: date) -> int:
     return count
 
 @app.get("/analytics/employees/{emp_code}/monthly")
-def employee_monthly_analytics(
-    emp_code: str = Path(..., pattern=EMP_CODE_REGEX),
-    month: str = Query(...)
-):
-    database = get_db()
-    emp = database.employees.find_one({"emp_code": emp_code}, {"_id": 0})
-    if not emp:
-        raise HTTPException(status_code=404, detail=f"Employee '{emp_code}' not found")
-
-    year, mon_val, first_day, last_day = parse_year_month(month)
-    joined_on = date.fromisoformat(emp["joined_on"])
-
-    # Working days: Monday-Friday from later of joined_on and first_day to last_day
-    # If employee has not joined by the end of month -> 0
-    if joined_on > last_day:
-        working_days = 0
-    else:
-        effective_start = max(first_day, joined_on)
-        working_days = count_weekdays_in_range(effective_start, last_day)
-
-    # MongoDB aggregation for attendance metrics in the month
-    pipeline = [
+def build_employee_monthly_pipeline(emp_code: str, first_day: date, last_day: date) -> list[dict]:
+    return [
         {
             "$match": {
                 "emp_code": emp_code,
@@ -950,6 +930,29 @@ def employee_monthly_analytics(
         }
     ]
 
+
+def employee_monthly_analytics(
+    emp_code: str = Path(..., pattern=EMP_CODE_REGEX),
+    month: str = Query(...)
+):
+    database = get_db()
+    emp = database.employees.find_one({"emp_code": emp_code}, {"_id": 0})
+    if not emp:
+        raise HTTPException(status_code=404, detail=f"Employee '{emp_code}' not found")
+
+    year, mon_val, first_day, last_day = parse_year_month(month)
+    joined_on = date.fromisoformat(emp["joined_on"])
+
+    # Working days: Monday-Friday from later of joined_on and first_day to last_day
+    # If employee has not joined by the end of month -> 0
+    if joined_on > last_day:
+        working_days = 0
+    else:
+        effective_start = max(first_day, joined_on)
+        working_days = count_weekdays_in_range(effective_start, last_day)
+
+    # MongoDB aggregation for attendance metrics in the month
+    pipeline = build_employee_monthly_pipeline(emp_code, first_day, last_day)
     agg_res = list(database.attendance_logs.aggregate(pipeline))
     if agg_res:
         m = agg_res[0]
@@ -985,15 +988,7 @@ def employee_monthly_analytics(
 
 # --- Endpoint H: GET /analytics/departments/summary ---
 @app.get("/analytics/departments/summary")
-def department_summary_analytics(
-    month: str = Query(...),
-    department: Optional[str] = Query(None)
-):
-    database = get_db()
-    year, mon_val, first_day, last_day = parse_year_month(month)
-    last_day_str = last_day.isoformat()
-    first_day_str = first_day.isoformat()
-
+def build_department_summary_pipeline(first_day_str: str, last_day_str: str, department: Optional[str] = None) -> list[dict]:
     match_stage = {"joined_on": {"$lte": last_day_str}}
     if department is not None:
         match_stage["department"] = department
@@ -1132,6 +1127,18 @@ def department_summary_analytics(
         {"$sort": {"department": ASCENDING}}
     ]
 
+    return pipeline
+
+def department_summary_analytics(
+    month: str = Query(...),
+    department: Optional[str] = Query(None)
+):
+    database = get_db()
+    year, mon_val, first_day, last_day = parse_year_month(month)
+    last_day_str = last_day.isoformat()
+    first_day_str = first_day.isoformat()
+
+    pipeline = build_department_summary_pipeline(first_day_str, last_day_str, department)
     cursor = database.employees.aggregate(pipeline)
     items = []
     for row in cursor:
@@ -1155,16 +1162,7 @@ def department_summary_analytics(
 
 # --- Endpoint I: GET /analytics/leaderboard/late ---
 @app.get("/analytics/leaderboard/late")
-def late_leaderboard(
-    month: str = Query(...),
-    limit: int = Query(10, ge=1, le=50),
-    department: Optional[str] = Query(None)
-):
-    database = get_db()
-    year, mon_val, first_day, last_day = parse_year_month(month)
-    first_day_str = first_day.isoformat()
-    last_day_str = last_day.isoformat()
-
+def build_late_leaderboard_pipeline(first_day_str: str, last_day_str: str, limit: int, department: Optional[str] = None) -> list[dict]:
     match_att = {
         "date": {"$gte": first_day_str, "$lte": last_day_str},
         "late_minutes": {"$gt": 0}
@@ -1217,6 +1215,19 @@ def late_leaderboard(
         {"$match": {"rank": {"$lte": limit}}},
         {"$sort": {"rank": ASCENDING, "emp_code": ASCENDING}}
     ])
+    return pipeline
+
+def late_leaderboard(
+    month: str = Query(...),
+    limit: int = Query(10, ge=1, le=50),
+    department: Optional[str] = Query(None)
+):
+    database = get_db()
+    year, mon_val, first_day, last_day = parse_year_month(month)
+    first_day_str = first_day.isoformat()
+    last_day_str = last_day.isoformat()
+
+    pipeline = build_late_leaderboard_pipeline(first_day_str, last_day_str, limit, department)
 
     cursor = database.attendance_logs.aggregate(pipeline)
     items = []
