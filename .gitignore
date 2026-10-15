@@ -49,8 +49,10 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Environments
+.# Environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
