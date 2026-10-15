@@ -1304,7 +1304,7 @@ def build_department_trend_pipeline(department: str, from_date: str, to_date: st
                         {"$eq": ["$$log.date", "$dates"]},
                         {"$gt": [{"$ifNull": ["$$log.late_minutes", 0]}, 0]}
                     ]}
-                }}, 0]}, 1, 0]}
+                }}}, 0]}, 1, 0]}
             }}}
         }},
         {"$set": {"attendance_rate": {"$cond": [
