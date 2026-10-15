@@ -1420,28 +1420,7 @@ def explain_endpoint(
             if not emp_code or not month:
                 raise HTTPException(status_code=422, detail="'emp_code' and 'month' are required for employee_monthly")
             year, mon_val, first_day, last_day = parse_year_month(month)
-            pipeline = [
-                {
-                    "$match": {
-                        "emp_code": emp_code,
-                        "date": {"$gte": first_day.isoformat(), "$lte": last_day.isoformat()}
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": None,
-                        "present_days": {
-                            "$sum": {
-                                "$cond": [
-                                    {"$in": ["$status", ["PRESENT", "WFH", "ON_DUTY"]]},
-                                    {"$cond": [{"$eq": ["$half_day", True]}, 0.5, 1.0]},
-                                    0.0
-                                ]
-                            }
-                        }
-                    }
-                }
-            ]
+            pipeline = build_employee_monthly_pipeline(emp_code, first_day, last_day)
             explain_cmd = {
                 "explain": {
                     "aggregate": "attendance_logs",
@@ -1457,33 +1436,7 @@ def explain_endpoint(
             if not month:
                 raise HTTPException(status_code=422, detail="'month' is required for department_summary")
             year, mon_val, first_day, last_day = parse_year_month(month)
-            match_stage = {"joined_on": {"$lte": last_day.isoformat()}}
-            if department is not None:
-                match_stage["department"] = department
-
-            pipeline = [
-                {"$match": match_stage},
-                {
-                    "$lookup": {
-                        "from": "attendance_logs",
-                        "let": {"code": "$emp_code"},
-                        "pipeline": [
-                            {
-                                "$match": {
-                                    "$expr": {
-                                        "$and": [
-                                            {"$eq": ["$emp_code", "$$code"]},
-                                            {"$gte": ["$date", first_day.isoformat()]},
-                                            {"$lte": ["$date", last_day.isoformat()]}
-                                        ]
-                                    }
-                                }
-                            }
-                        ],
-                        "as": "logs"
-                    }
-                }
-            ]
+            pipeline = build_department_summary_pipeline(first_day.isoformat(), last_day.isoformat(), department)
             explain_cmd = {
                 "explain": {
                     "aggregate": "employees",
@@ -1499,20 +1452,10 @@ def explain_endpoint(
             if not month:
                 raise HTTPException(status_code=422, detail="'month' is required for late_leaderboard")
             year, mon_val, first_day, last_day = parse_year_month(month)
-            pipeline = [
-                {
-                    "$match": {
-                        "date": {"$gte": first_day.isoformat(), "$lte": last_day.isoformat()},
-                        "late_minutes": {"$gt": 0}
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": "$emp_code",
-                        "total_late_minutes": {"$sum": "$late_minutes"}
-                    }
-                }
-            ]
+            explain_limit = 10 if limit is None else limit
+            if explain_limit < 1 or explain_limit > 50:
+                raise HTTPException(status_code=422, detail="limit must be between 1 and 50")
+            pipeline = build_late_leaderboard_pipeline(first_day.isoformat(), last_day.isoformat(), explain_limit, department)
             explain_cmd = {
                 "explain": {
                     "aggregate": "attendance_logs",
