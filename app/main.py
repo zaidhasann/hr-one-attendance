@@ -93,7 +93,7 @@ def parse_hh_mm(t_str: str) -> tuple[int, int]:
 
 def parse_iso_date(value: str, field_name: str = "date") -> date:
     """Parse a strict YYYY-MM-DD date, rejecting permissive ISO variants."""
-    if not isinstance(value, str) or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", value):
+    if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
         raise ValueError(f"{field_name} must use YYYY-MM-DD format")
     try:
         return date.fromisoformat(value)
@@ -1507,8 +1507,8 @@ def explain_endpoint(
         elif endpoint == "department_trend":
             if not department or not from_date or not to_date:
                 raise HTTPException(status_code=422, detail="'department', 'from', and 'to' are required for department_trend")
-            d_f = date.fromisoformat(from_date)
-            d_t = date.fromisoformat(to_date)
+            d_f = parse_iso_date(from_date, "from")
+            d_t = parse_iso_date(to_date, "to")
             if d_t < d_f:
                 raise HTTPException(status_code=422, detail="'to' < 'from'")
             day_span = (d_t - d_f).days + 1
