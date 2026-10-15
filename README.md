@@ -46,7 +46,7 @@ To verify database readiness and application health:
 curl http://localhost:8000/health
 ```
 
-Returns `{"status": "ok"}` with HTTP 200 when MongoDB is connected, or HTTP 503 if unavailable.
+Returns `{"status": "ok"}` with HTTP 200 only after MongoDB connectivity and required indexes are ready. Startup fails if required index creation fails; the endpoint returns HTTP 503 when the database is unavailable or initialization is incomplete.
 
 ## Implemented API Endpoints
 
@@ -70,7 +70,7 @@ Returns `{"status": "ok"}` with HTTP 200 when MongoDB is connected, or HTTP 503 
 
 ## Running Tests
 
-Local unit and integration tests can be executed using `pytest`:
+Unit tests can be executed locally using `pytest` (they do not require a running MongoDB instance):
 
 ```bash
 python -m pytest
