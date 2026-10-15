@@ -41,9 +41,7 @@ def test_epoch_ms_rejects_seconds_and_booleans():
 
 
 def test_overnight_shift_assigns_early_morning_punch_to_previous_date():
-    punch = datetime(2026, 10, 15, 2, 0, tzinfo=timezone.utc)
-    # 02:00 UTC is 07:30 IST, so use 01:00 UTC (06:30 IST) to remain
-    # before the 06:00 IST end only when UTC instant maps to 05:30 IST.
+    # 00:15 UTC is 05:45 IST, before the 06:00 IST shift end.
     punch = datetime(2026, 10, 15, 0, 15, tzinfo=timezone.utc)
     assert get_attendance_date_for_punch(punch, "22:00", "06:00") == "2026-10-14"
 
