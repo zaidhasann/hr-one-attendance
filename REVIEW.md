@@ -19,7 +19,7 @@ No starter code was provided in the repository workspace; the project was create
 - **Timestamp Precision & Range Enforcement**: Integers between 100000000000 and 4102444800000 validated; seconds-based values, floats, strings, and booleans rejected with HTTP 422. Timestamps truncated to whole seconds.
 - **Grace Period & Lateness (R2)**: Exact 10-minute grace period enforced (`diff_sec > 600`). Whole minutes elapsed from shift start calculated using floor semantics.
 - **Half-Day Boundary (R5)**: Work hours strictly less than 4.50 marked as `half_day = True`, contributing 0.5 present days.
-- **Explain Endpoint (`/admin/explain/{endpoint}`)**: Explain output is generated from MongoDB. The department-trend explain path reuses the production pipeline and requests `executionStats`; the attendance-list path now explicitly requests `executionStats`. Other analytics explain branches remain diagnostic approximations and should be kept aligned with their production pipelines before using them as proof of plan parity.
+- **Explain Endpoint (`/admin/explain/{endpoint}`)**: All analytics explain branches now reuse the same pipeline builders as their production endpoints. Explain requests use MongoDB `executionStats`, including the attendance-list find query.
 - **Startup Readiness**: Required index creation is fail-fast; `/health` returns 503 until startup initialization succeeds.
 - **Strict Dates**: API date inputs and `joined_on` use the exact `YYYY-MM-DD` format.
 - **Legacy Regularization**: Optimistic concurrency supports existing attendance documents where the `history` field is absent.
