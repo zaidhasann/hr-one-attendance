@@ -416,15 +416,14 @@ indexes_ready = False
 async def lifespan(app: FastAPI):
     # Required indexes enforce uniqueness and support contract-critical queries.
     # Startup fails rather than silently serving without these guarantees.
-    global indexes_ready
-    database = get_db()
-    init_db_indexes(database)
-    indexes_ready = True
+    global indexes_ready, mongo_client
     try:
+        database = get_db()
+        init_db_indexes(database)
+        indexes_ready = True
         yield
     finally:
         indexes_ready = False
-        global mongo_client
         if mongo_client:
             mongo_client.close()
             mongo_client = None
