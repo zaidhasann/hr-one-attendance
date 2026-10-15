@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Any, Union
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, Path, Request, status
+from fastapi import FastAPI, HTTPException, Query, Path, Request, status, Response
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
@@ -1410,7 +1410,7 @@ def explain_endpoint(
             skip = (page - 1) * page_size
             cursor = database.attendance_logs.find(query).sort([("date", DESCENDING), ("emp_code", ASCENDING)]).skip(skip).limit(page_size)
             explain_res = cursor.explain()
-            return json_util.loads(json_util.dumps(explain_res))
+            return Response(content=json_util.dumps(explain_res), media_type="application/json")
 
         elif endpoint == "employee_monthly":
             if not emp_code or not month:
@@ -1447,7 +1447,7 @@ def explain_endpoint(
                 "verbosity": "executionStats"
             }
             explain_res = database.command(explain_cmd)
-            return json_util.loads(json_util.dumps(explain_res))
+            return Response(content=json_util.dumps(explain_res), media_type="application/json")
 
         elif endpoint == "department_summary":
             if not month:
@@ -1489,7 +1489,7 @@ def explain_endpoint(
                 "verbosity": "executionStats"
             }
             explain_res = database.command(explain_cmd)
-            return json_util.loads(json_util.dumps(explain_res))
+            return Response(content=json_util.dumps(explain_res), media_type="application/json")
 
         elif endpoint == "late_leaderboard":
             if not month:
@@ -1518,7 +1518,7 @@ def explain_endpoint(
                 "verbosity": "executionStats"
             }
             explain_res = database.command(explain_cmd)
-            return json_util.loads(json_util.dumps(explain_res))
+            return Response(content=json_util.dumps(explain_res), media_type="application/json")
 
         elif endpoint == "department_trend":
             if not department or not from_date or not to_date:
@@ -1559,7 +1559,7 @@ def explain_endpoint(
                 "verbosity": "executionStats"
             }
             explain_res = database.command(explain_cmd)
-            return json_util.loads(json_util.dumps(explain_res))
+            return Response(content=json_util.dumps(explain_res), media_type="application/json")
 
     except HTTPException:
         raise
