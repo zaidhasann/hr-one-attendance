@@ -1392,8 +1392,17 @@ def explain_endpoint(
                 query["status"] = status_param
 
             skip = (page - 1) * page_size
-            cursor = database.attendance_logs.find(query).sort([("date", DESCENDING), ("emp_code", ASCENDING)]).skip(skip).limit(page_size)
-            explain_res = cursor.explain()
+            explain_cmd = {
+                "explain": {
+                    "find": "attendance_logs",
+                    "filter": query,
+                    "sort": {"date": DESCENDING, "emp_code": ASCENDING},
+                    "skip": skip,
+                    "limit": page_size
+                },
+                "verbosity": "executionStats"
+            }
+            explain_res = database.command(explain_cmd)
             return Response(content=json_util.dumps(explain_res), media_type="application/json")
 
         elif endpoint == "employee_monthly":
