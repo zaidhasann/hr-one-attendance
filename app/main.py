@@ -670,7 +670,7 @@ def list_attendance(
             date_q["$lte"] = date_to
         
         if date_from is not None and date_to is not None:
-            if date.fromisoformat(date_from) > date.fromisoformat(date_to):
+            if parse_iso_date(date_from, "date_from") > parse_iso_date(date_to, "date_to"):
                 raise HTTPException(status_code=422, detail="date_from cannot be greater than date_to")
 
         query["date"] = date_q
@@ -1378,12 +1378,12 @@ def explain_endpoint(
             if date_from is not None or date_to is not None:
                 date_q = {}
                 if date_from is not None:
-                    date.fromisoformat(date_from)
+                    parse_iso_date(date_from, "date_from")
                     date_q["$gte"] = date_from
                 if date_to is not None:
-                    date.fromisoformat(date_to)
+                    parse_iso_date(date_to, "date_to")
                     date_q["$lte"] = date_to
-                if date_from and date_to and date.fromisoformat(date_from) > date.fromisoformat(date_to):
+                if date_from and date_to and parse_iso_date(date_from, "date_from") > parse_iso_date(date_to, "date_to"):
                     raise HTTPException(status_code=422, detail="date_from > date_to")
                 query["date"] = date_q
             if status_param is not None:
